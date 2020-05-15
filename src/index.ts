@@ -1,12 +1,17 @@
 import { createWorker } from 'tesseract.js';
 import Jimp from 'jimp';
+import { readSync } from 'clipboardy';
+import solve from '@mattflow/sudoku-solver';
 
-const filename = process.argv[2];
-console.log(filename);
-
-let puzzle = '';
-
+// todo break this up into multiple functions
 (async () => {
+    // todo read from clipboard
+    // or read multiple files from a folder?
+    const thing = readSync();
+    console.log(thing);
+
+    const filename = process.argv[2];
+    console.log(`optimizing ${filename}`);
     const image = await Jimp.read(filename);
     image.greyscale().contrast(1).autocrop().autocrop();
     image.write('processed.png');
@@ -15,19 +20,17 @@ let puzzle = '';
     const cellWidth = image.getWidth() / 9;
     const cellHeight = image.getHeight() / 9;
 
+    console.log('loading worker');
     const worker = createWorker();
-    console.log('loading 1/4');
     await worker.load();
-    console.log('loading 2/4');
     await worker.loadLanguage('eng');
-    console.log('loading 3/4');
     await worker.initialize('eng');
-    console.log('loading 4/4');
     await worker.setParameters({
         tessedit_char_whitelist: '123456789',
     });
 
-    console.log('parsing');
+    console.log('parsing image');
+    let puzzle = '';
     for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
             const rectangle = {
@@ -41,14 +44,18 @@ let puzzle = '';
             text = text.trim();
             if (text.length != 1) text = '.';
             puzzle = `${puzzle}${text}`;
-            console.log(`${row}, ${col}: ${text}`);
         }
     }
 
     await worker.terminate();
+
     console.log(puzzle);
+    const result = solve(puzzle, { emptyValue: '.' });
+    console.log(result);
+    console.log('valid');
 })().then(() => {
     console.log('done');
 }) .catch((error) => {
     console.log('error', error);
+    process.exit(1);
 });
