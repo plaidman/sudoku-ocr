@@ -1,4 +1,4 @@
-import { createWorker } from 'tesseract.js';
+import { createWorker, createScheduler } from 'tesseract.js';
 import Jimp from 'jimp';
 import solve from '@mattflow/sudoku-solver';
 import { readdirSync } from 'fs';
@@ -24,8 +24,8 @@ async function processImage(filename: string): Promise<Image> {
     };
 }
 
-async function loadWorker(): Promise<Tesseract.Worker> {
-    console.log('loading worker');
+async function loadWorker(scheduler: Tesseract.Scheduler, i: number): Promise<void> {
+    console.log(`loading worker ${i}`);
 
     const worker = createWorker();
 
@@ -36,13 +36,14 @@ async function loadWorker(): Promise<Tesseract.Worker> {
         tessedit_char_whitelist: '123456789',
     });
 
-    return worker;
+    scheduler.addWorker(worker);
 }
 
-async function parseImage(worker: Tesseract.Worker, image: Image): Promise<string> {
+async function parseImage(scheduler: Tesseract.Scheduler, image: Image): Promise<string> {
     console.log('parsing image');
 
     let puzzle = '';
+    const jobs = [];
 
     for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
@@ -53,18 +54,25 @@ async function parseImage(worker: Tesseract.Worker, image: Image): Promise<strin
                 height: image.cellHeight * .84,
             };
 
-            let { data: { text } } = await worker.recognize(image.buffer, { rectangle });
-            text = text.trim();
-            if (text.length != 1) text = '.';
-            puzzle = `${puzzle}${text}`;
+            jobs.push(scheduler.addJob('recognize', image.buffer, { rectangle }));
         }
+    }
+
+    const results = await Promise.all<Tesseract.RecognizeResult>(jobs);
+    for (let { data: { text } } of results) {
+        text = text.trim();
+        if (text.length != 1) text = '.';
+        puzzle = `${puzzle}${text}`;
     }
 
     return puzzle;
 }
 
 async function controller(): Promise<void> {
-    const worker = await loadWorker();
+    const scheduler = createScheduler();
+    for (let i = 0; i < 3; i++) {
+        await loadWorker(scheduler, i);
+    }
 
     const files = readdirSync('sudokus').filter((file) => {
         return file.substring(file.length - 4) === '.png';
@@ -75,7 +83,7 @@ async function controller(): Promise<void> {
 
         const image = await processImage(`sudokus/${file}`);
 
-        const puzzle = await parseImage(worker, image);
+        const puzzle = await parseImage(scheduler, image);
         console.log(puzzle);
 
         try {
@@ -87,7 +95,7 @@ async function controller(): Promise<void> {
         }
     }
 
-    await worker.terminate();
+    await scheduler.terminate();
 }
 
 controller().then(() => {
