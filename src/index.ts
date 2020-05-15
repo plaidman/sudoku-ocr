@@ -1,6 +1,7 @@
 import { createWorker } from 'tesseract.js';
 import Jimp from 'jimp';
 import solve from '@mattflow/sudoku-solver';
+import { readdirSync } from 'fs';
 
 type Image = {
     buffer: Buffer,
@@ -62,22 +63,34 @@ async function parseImage(worker: Tesseract.Worker, image: Image): Promise<strin
     return puzzle;
 }
 
-// todo break this up into multiple functions
-(async () => {
+async function controller(): Promise<void> {
     const worker = await loadWorker();
 
-    const filename = process.argv[2];
-    const image = await processImage(filename);
+    const files = readdirSync('sudokus').filter((file) => {
+        return file.substring(file.length - 4) === '.png';
+    });
+    
+    for (const file of files) {
+        console.log('');
 
-    const puzzle = await parseImage(worker, image);
+        const image = await processImage(`sudokus/${file}`);
 
-    console.log(puzzle);
-    const result = solve(puzzle, { emptyValue: '.' });
-    console.log(result);
-    console.log('valid');
+        const puzzle = await parseImage(worker, image);
+        console.log(puzzle);
+
+        try {
+            const solution = solve(puzzle, { emptyValue: '.' });
+            console.log(solution);
+            console.log('valid');
+        } catch (error) {
+            console.log('invalid', error);
+        }
+    }
 
     await worker.terminate();
-})().then(() => {
+}
+
+controller().then(() => {
     console.log('done');
 }) .catch((error) => {
     console.log('error', error);
