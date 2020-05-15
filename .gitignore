@@ -2,3 +2,4 @@ node_modules
 eng.traineddata
 processed.png
 yarn-error.log
+sudokus/*.png

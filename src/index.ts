@@ -9,13 +9,15 @@ type Image = {
     cellHeight: number,
 };
 
-async function processImage(filename: string): Promise<Image> {
+async function processImage(filename: string, saveProcessed: boolean): Promise<Image> {
     console.log(`optimizing ${filename}`);
 
     const image = await Jimp.read(filename);
     image.greyscale().contrast(1).autocrop().autocrop();
 
-    // image.write('processed.png');
+    if (saveProcessed) {
+        image.write('processed.png');
+    }
 
     return {
         buffer: await image.getBufferAsync(Jimp.MIME_PNG),
@@ -48,10 +50,10 @@ async function parseImage(scheduler: Tesseract.Scheduler, image: Image): Promise
     for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
             const rectangle = {
-                left: col * image.cellWidth + image.cellWidth * .08,
-                top: row * image.cellHeight + image.cellHeight * .08,
-                width: image.cellWidth * .84,
-                height: image.cellHeight * .84,
+                left: col * image.cellWidth + image.cellWidth * .1,
+                top: row * image.cellHeight + image.cellHeight * .1,
+                width: image.cellWidth * .8,
+                height: image.cellHeight * .8,
             };
 
             jobs.push(scheduler.addJob('recognize', image.buffer, { rectangle }));
@@ -74,20 +76,25 @@ async function controller(): Promise<void> {
         await loadWorker(scheduler, i);
     }
 
-    const files = readdirSync('sudokus').filter((file) => {
-        return file.substring(file.length - 4) === '.png';
-    });
+    let files = [];
+    if (process.argv[2] !== undefined) {
+        files = [process.argv[2]];
+    } else {
+        files = readdirSync('sudokus').filter((file) => {
+            return file.substring(file.length - 4) === '.png';
+        }).map(file => `sudokus/${file}`);
+    }
     
     for (const file of files) {
         console.log('');
 
-        const image = await processImage(`sudokus/${file}`);
+        const image = await processImage(file, files.length === 1);
 
         const puzzle = await parseImage(scheduler, image);
         console.log(puzzle);
 
         try {
-            const solution = solve(puzzle, { emptyValue: '.' });
+            const solution = solve(puzzle, { maxIterations: 1<<22, emptyValue: '.' });
             console.log(solution);
             console.log('valid');
         } catch (error) {
