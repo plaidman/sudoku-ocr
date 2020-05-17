@@ -63,7 +63,7 @@ async function parseImage(scheduler: Tesseract.Scheduler, image: Image): Promise
     const results = await Promise.all<Tesseract.RecognizeResult>(jobs);
     for (let { data: { text } } of results) {
         text = text.trim();
-        if (text.length != 1) text = '.';
+        if (text.length != 1) text = '0';
         puzzle = `${puzzle}${text}`;
     }
 
@@ -85,6 +85,8 @@ async function controller(): Promise<void> {
         }).map(file => `sudokus/${file}`);
     }
     
+    const valids: string[] = [];
+    const fails: string[] = []; 
     for (const file of files) {
         console.log('');
 
@@ -94,12 +96,26 @@ async function controller(): Promise<void> {
         console.log(puzzle);
 
         try {
-            const solution = solve(puzzle, { maxIterations: 1<<22, emptyValue: '.' });
+            const solution = solve(puzzle, { maxIterations: 1<<22, emptyValue: '0' });
             console.log(solution);
             console.log('valid');
+            valids.push(puzzle);
         } catch (error) {
             console.log('invalid', error);
+            fails.push(file);
         }
+    }
+
+    console.log('\n-------------------------------------------------');
+
+    console.log(`\nfail: ${fails.length}\n---------`);
+    for (const fail of fails) {
+        console.log(fail);
+    }
+
+    console.log(`\nvalid: ${valids.length}\n----------`);
+    for (const puzzle of valids) {
+        console.log(puzzle);
     }
 
     await scheduler.terminate();
