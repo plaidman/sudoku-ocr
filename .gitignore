@@ -3,3 +3,5 @@ eng.traineddata
 processed.png
 yarn-error.log
 sudokus/*.png
+sudokus/puzzles.txt
+sudokus/puzzles.out.txt

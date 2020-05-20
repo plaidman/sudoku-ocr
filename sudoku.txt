@@ -1,0 +1,136 @@
+conjugate pair
+  candidate X exists in exactly two cells in a house
+  other candidates can be in those cells
+
+bivalue cell
+  a cell has exactly two candidates
+
+weak link
+  two cells with candidate X share a house with other cells that have candidate X
+  two candidates in a cell share that cell with other candidates
+  if one is true, the others are false
+
+strong link
+  conjugate pair or bivalue cell
+  if one is false, the other is true
+
+AB switch
+  candidate X in a block exists in exactly one column AND exactly one row
+  if a candidate in one axis is false, one in the opposite axis must be true
+
+AIC
+  chain of even number of cells where the links start strong
+  alternate weak, strong, etc
+  must end with a strong link
+
+AIC propagation rules
+  1) if a cell has two weak links,
+     that cell must be a bivalue cell
+     the links must be pointing at each candidate
+  2) if a cell has two strong links,
+     they must be pointing to two different candidates in that cell
+  3) if a cell has a strong and a weak link,
+     both links must be pointing at the same candidate
+
+-----------------------------------------
+
+naked single
+  *scan for cells with only one candidate
+  single candidate is left in a cell
+
+hidden single
+  *scan each candidate for a single highlighted cell in a house
+  a house contains only once cell with a certain candidate
+  other candidates can be in that cell
+
+naked group
+  *scan each candidate for pairs and triples
+  N candidates exist in N cells in a house
+  no other candidates exist in those cells
+  those candidates can be removed from other cells in the house
+
+hidden group
+  *scan each candidate for conjugate pair
+  *test each other candidate in those two cells to see if they exist outside those cells
+  N candidates exist in N cells in a house
+  those candidates do not exist in any other cells
+  other candidates can be in those cells
+  the other candidates in those cells can be removed
+
+pointing locked candidate
+  *scan each candidate for blocks that are close to empty
+  in a block, candidate X exists in only one row
+  other cells in that row, candidate X can be removed
+  
+claiming locked candidate
+  *scan each candidate for rows or columns that are close to empty
+  in a row or column, candidate X exists in only one block
+  other cells in that block, candidate X can be removed
+
+x-wing
+  *scan each candidate for conjugate pairs
+  two sets of conjugate pairs in two rows or columns form a box
+  other instances of candidate X are in the opposite axis to the conjugate pairs
+  the other instances in the opposite axis can be removed
+finned x-wing
+  x-wing but one corner of the box has an additional candidate cell the same block
+  additional candidate must be in line with the conjugate pair
+  other instances can be removed from the opposite axis ONLY in the block with the fin
+swordfish
+  x-wing but 3 rows and columns instead of 2
+
+turbot fish
+  *scan each candidate for conjugate pairs
+  two conjugate pairs of candidate X are connected with a weak link
+  any candidate X that sees both ends of the chain can be removed
+2 string kite
+  turbot fish but one end of the chain lies in a column and the other one lies in a row
+skyscraper
+  turbot fish but both of the conjugate pairs are vertical or horizontal
+
+empty rectangle
+  *scan each candidate for a conjugate pair
+  one end of the pair lines up with one axis of an AB switch
+  a cell that sees the other end of the pair AND the other axis of the AB switch can be removed
+
+BUG+1
+  *scan all incomplete cells for a single trivalue cell
+  only bivalue cells are left in the puzzle except one trivalue cell
+  two of the three candidates appear twice in any house
+  the last candidate appears three times in any house
+  the value for the trivalue cell is the candidate that appears three times
+
+simple coloring
+  *scan for a candidate with many conjugate pairs
+  make a graph where each cell of a pair is a different color
+  any candidate X that can see both colors can be removed
+  if two cells of one color can see each other
+    every cell with that color must be false
+    every cell of the opposite color must the value X
+
+continuous loop
+  AIC where the endpoints are weakly linked to eachother
+  all weak links in the chain are effectively strong
+  all other candidates in the house or cell can be removed
+
+unique rectangle 1
+unique rectangle 2
+unique rectangle 5
+xy wing
+xyz wing
+remote pairs
+
+
+
+sashimi xwing
+unique rectangle 3
+unique rectangle 4
+x chain
+xy chain
+w wing
+sue de coq
+continuous loops
+discontinuous loops
+
+
+

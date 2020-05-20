@@ -1,7 +1,9 @@
 import { createWorker, createScheduler } from 'tesseract.js';
 import Jimp from 'jimp';
 import solve from '@mattflow/sudoku-solver';
-import { readdirSync } from 'fs';
+import { readdirSync, writeFileSync, readFileSync, unlinkSync } from 'fs';
+import { runCommand } from './runCommand';
+import { writeSync } from 'clipboardy';
 
 type Image = {
     buffer: Buffer,
@@ -70,6 +72,37 @@ async function parseImage(scheduler: Tesseract.Scheduler, image: Image): Promise
     return puzzle;
 }
 
+async function gradePuzzles(puzzles: string[]): Promise<string[]> {
+    const result: string[] = [];
+    const levelMap = {
+        Easy: 'easy',
+        Medium: 'med',
+        Hard: 'hard',
+        Unfair: 'vhard',
+        Extreme: 'vhard+',
+    }
+
+    writeFileSync('sudokus/puzzles.txt', puzzles.join('\n'));
+    await runCommand('java', [
+        '-jar', 'hodoku.jar',
+        '/bs', 'sudokus/puzzles.txt',
+        '/o', 'sudokus/puzzles.out.txt'
+    ]);
+
+    const out = readFileSync('sudokus/puzzles.out.txt').toString();
+    for (const line of out.split('\n')) {
+        const items = line.split(' ');
+
+        if (items.length !== 4) {
+            continue;
+        }
+
+        result.push(`${items[3].substr(1, items[3].length - 2)},${levelMap[items[2]]},${items[0]}`);
+    }
+    
+    return result;
+}
+
 async function controller(): Promise<void> {
     const scheduler = createScheduler();
     for (let i = 0; i < 3; i++) {
@@ -106,24 +139,29 @@ async function controller(): Promise<void> {
         }
     }
 
+    await scheduler.terminate();
+
     console.log('\n-------------------------------------------------');
 
-    console.log(`\nfail: ${fails.length}\n---------`);
-    for (const fail of fails) {
-        console.log(fail);
+    if (fails.length > 0) {
+        console.log(`\nfail: ${fails.length}\n---------`);
+        for (const fail of fails) {
+            console.log(fail);
+        }
+
+        process.exit(1);
     }
 
-    console.log(`\nvalid: ${valids.length}\n----------`);
-    for (const puzzle of valids) {
-        console.log(puzzle);
-    }
-
-    await scheduler.terminate();
+    const puzzles = await gradePuzzles(valids);
+    writeFileSync('sudokus/puzzles.txt', puzzles.join('\n'));
+    unlinkSync('sudokus/puzzles.out.txt');
+    writeSync(puzzles.join('\n'));
 }
 
 controller().then(() => {
-    console.log('done');
+    console.log('\ndone');
+    console.log('results are in sudokus/puzzles.txt and in your clipboard');
 }) .catch((error) => {
-    console.log('error', error);
+    console.log('\nerror', error);
     process.exit(1);
 });
