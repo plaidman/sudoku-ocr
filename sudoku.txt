@@ -110,8 +110,17 @@ simple coloring
 
 continuous loop
   AIC where the endpoints are weakly linked to eachother
-  all weak links in the chain are effectively strong
+  all weak links in the chain form a strongly linked pair
   all other candidates in the house or cell can be removed
+
+w wing
+  *scan for two matching bivalue cells X and Y
+  scan up/down and left/right to find a conjugate pair of X in a row or column
+  if the conjugate pair of cells lines up with the bivalue cells
+    you can remove candidate Y from any cells that see the two bivalue cells
+
+
+
 
 unique rectangle 1
 unique rectangle 2
@@ -127,9 +136,7 @@ unique rectangle 3
 unique rectangle 4
 x chain
 xy chain
-w wing
 sue de coq
-continuous loops
 discontinuous loops
 
 
