@@ -1,7 +1,7 @@
 import { createWorker, createScheduler } from 'tesseract.js';
 import Jimp from 'jimp';
 import solve from '@mattflow/sudoku-solver';
-import { readdirSync, writeFileSync, readFileSync } from 'fs';
+import { readdirSync, writeFileSync, readFileSync, existsSync, unlinkSync } from 'fs';
 import { runCommand } from './runCommand';
 import { writeSync } from 'clipboardy';
 
@@ -72,7 +72,7 @@ async function parseImage(scheduler: Tesseract.Scheduler, image: Image): Promise
     return puzzle;
 }
 
-async function controller(): Promise<void> {
+async function parseFiles(): Promise<string[]> {
     const scheduler = createScheduler();
     for (let i = 0; i < 3; i++) {
         await loadWorker(scheduler, i);
@@ -104,11 +104,31 @@ async function controller(): Promise<void> {
             valids.push(puzzle);
         } catch (error) {
             console.log('invalid', error);
-            fails.push(file);
+            fails.push(puzzle);
         }
     }
 
     await scheduler.terminate();
+
+    writeFileSync('sudokus/puzzles.in.txt', valids.join('\n'));
+
+    return fails;
+}
+
+async function controller(): Promise<void> {
+    let fails: string[] = [];
+    if (!existsSync('sudokus/puzzles.in.txt')) {
+        fails = await parseFiles();
+    } else {
+        console.log(">>> puzzles.in.txt already exists. skipping ocr step <<<");
+    }
+
+    unlinkSync('sudokus/puzzles.out.txt');
+    await runCommand('java', [
+        '-jar', 'bin/hodoku.jar',
+        '/bs', 'sudokus/puzzles.in.txt',
+        '/o', 'sudokus/puzzles.out.txt'
+    ]);
 
     console.log('\n-------------------------------------------------');
 
@@ -118,16 +138,8 @@ async function controller(): Promise<void> {
             console.log(fail);
         }
 
-        process.exit(1);
+        console.log('');
     }
-
-    writeFileSync('sudokus/puzzles.in.txt', valids.join('\n'));
-
-    await runCommand('java', [
-        '-jar', 'bin/hodoku.jar',
-        '/bs', 'sudokus/puzzles.in.txt',
-        '/o', 'sudokus/puzzles.out.txt'
-    ]);
 
     const puzzles = readFileSync('sudokus/puzzles.out.txt').toString();
     writeSync(puzzles);

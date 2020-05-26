@@ -4,7 +4,8 @@
   "description": "sudoku ocr",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/index.ts",
+    "hodoku": "java -jar bin/hodoku.jar"
   },
   "dependencies": {
     "@mattflow/sudoku-solver": "^2.2.0",
