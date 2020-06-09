@@ -87,7 +87,7 @@ async function parseFiles(): Promise<string[]> {
         }).map(file => `sudokus/${file}`);
     }
     
-    const valids: string[] = [];
+    const puzzles: string[] = [];
     const fails: string[] = []; 
     for (const file of files) {
         console.log('');
@@ -98,19 +98,20 @@ async function parseFiles(): Promise<string[]> {
         console.log(puzzle);
 
         try {
-            const solution = solve(puzzle, { maxIterations: 1<<22, emptyValue: '0' });
+            const solution = solve(puzzle, { maxIterations: 1<<30, emptyValue: '0' });
             console.log(solution);
             console.log('valid');
-            valids.push(puzzle);
+            puzzles.push(puzzle);
         } catch (error) {
             console.log('invalid', error);
+            puzzles.push(`X ${puzzle}`);
             fails.push(puzzle);
         }
     }
 
     await scheduler.terminate();
 
-    writeFileSync('sudokus/puzzles.in.txt', valids.join('\n'));
+    writeFileSync('sudokus/puzzles.in.txt', puzzles.join('\n'));
 
     return fails;
 }
@@ -123,12 +124,9 @@ async function controller(): Promise<void> {
         console.log(">>> puzzles.in.txt already exists. skipping ocr step <<<");
     }
 
-    unlinkSync('sudokus/puzzles.out.txt');
-    await runCommand('java', [
-        '-jar', 'bin/hodoku.jar',
-        '/bs', 'sudokus/puzzles.in.txt',
-        '/o', 'sudokus/puzzles.out.txt'
-    ]);
+    if (existsSync('sudokus/puzzles.out.txt')) {
+        unlinkSync('sudokus/puzzles.out.txt');
+    }
 
     console.log('\n-------------------------------------------------');
 
@@ -139,7 +137,14 @@ async function controller(): Promise<void> {
         }
 
         console.log('');
+        process.exit(1);
     }
+
+    await runCommand('java', [
+        '-jar', 'bin/hodoku.jar',
+        '/bs', 'sudokus/puzzles.in.txt',
+        '/o', 'sudokus/puzzles.out.txt'
+    ]);
 
     const puzzles = readFileSync('sudokus/puzzles.out.txt').toString();
     writeSync(puzzles);

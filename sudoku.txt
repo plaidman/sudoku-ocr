@@ -101,7 +101,7 @@ BUG+1
   the value for the trivalue cell is the candidate that appears three times
 
 simple coloring
-  *scan for a candidate with many conjugate pairs
+  *scan for a candidate X with many conjugate pairs
   make a graph where each cell of a pair is a different color
   any candidate X that can see both colors can be removed
   if two cells of one color can see each other
@@ -118,6 +118,17 @@ w wing
   scan up/down and left/right to find a conjugate pair of X in a row or column
   if the conjugate pair of cells lines up with the bivalue cells
     you can remove candidate Y from any cells that see the two bivalue cells
+
+slot machine
+  *scan for a digit which is given or solved three times, once in each vertical and horizontal chute
+  *  where one is in each row and each column
+  pick a candidate in one of the boxes with two possible candidates, assume that is true
+  follow the logic around to see if there is an inconsistency (highlight green)
+  if so, that original candidate must be false
+  if there is no inconsistency, try again with the other digit (highlight blue)
+  if again there is no inconsistency
+    any candidate that can see green and blue can be eliminated
+  these chains can trigger other numbers, each number can be colored differently to find inconsistencies
 
 
 
